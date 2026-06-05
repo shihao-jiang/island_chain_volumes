@@ -49,8 +49,10 @@ from IHotVol_Spectral import IHotVol_Spectral
 
 
 def run(cmd):
-    """Run a shell (GMT) command."""
-    subprocess.run(cmd, shell=True, check=True)
+    """Run a shell (GMT) command, suppressing GMT warnings."""
+    env = os.environ.copy()
+    env['GMT_VERBOSE'] = 'e'   # e = errors only, suppress warnings
+    subprocess.run(cmd, shell=True, check=True, env=env)
 
 
 # =============================================================================

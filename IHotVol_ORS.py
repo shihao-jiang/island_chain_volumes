@@ -5,6 +5,7 @@ Optimised Residual Separation (Wessel, 2016).
 Equivalent to the MATLAB function IHotVol_ORS.
 """
 
+import os
 import subprocess
 import shutil
 import numpy as np
@@ -34,7 +35,9 @@ def IHotVol_ORS(grdfile, X, Y, Z, minW, maxW, intW, level, mask):
     """
 
     def run(cmd):
-        subprocess.run(cmd, shell=True, check=True)
+        env = os.environ.copy()
+        env['GMT_VERBOSE'] = 'e'
+        subprocess.run(cmd, shell=True, check=True, env=env)
 
     # Sub-region of map (slightly inset to avoid edge effects)
     region = (f'-R{np.ceil(X.min()) + 0.05:.4f}/{np.floor(X.max()) - 0.05:.4f}'

@@ -41,7 +41,9 @@ def IHotVol_Flexure(loadfile, rho_c, rho_w, rho_m, rho_i,
     """
 
     def run(cmd):
-        subprocess.run(cmd, shell=True, check=True)
+        env = os.environ.copy()
+        env['GMT_VERBOSE'] = 'e'
+        subprocess.run(cmd, shell=True, check=True, env=env)
 
     # Seconds per year
     sec_per_yr = 365.25 * 24 * 3600

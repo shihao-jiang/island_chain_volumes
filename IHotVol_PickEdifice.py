@@ -5,6 +5,7 @@ Hand-pick the volcanic edifice outline from the residual-separated bathymetry.
 Equivalent to the MATLAB function IHotVol_PickEdifice.
 """
 
+import os
 import subprocess
 import numpy as np
 import matplotlib
@@ -32,7 +33,9 @@ def IHotVol_PickEdifice(grdfile, AGES):
     """
 
     def run(cmd):
-        subprocess.run(cmd, shell=True, check=True)
+        env = os.environ.copy()
+        env['GMT_VERBOSE'] = 'e'
+        subprocess.run(cmd, shell=True, check=True, env=env)
 
     # Load residual grid
     Xres, Yres, Zres = grdread2(f'{grdfile}_residual.grd')

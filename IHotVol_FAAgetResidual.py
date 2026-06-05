@@ -5,6 +5,7 @@ Determines FAA anomaly and residual from the synthetic gravity approximation.
 Equivalent to the MATLAB function IHotVol_FAAgetResidual.
 """
 
+import os
 import subprocess
 import shutil
 import numpy as np
@@ -30,7 +31,9 @@ def IHotVol_FAAgetResidual(ORS_L, WGMFAAgrd, mask, subaq):
     """
 
     def run(cmd):
-        subprocess.run(cmd, shell=True, check=True)
+        env = os.environ.copy()
+        env['GMT_VERBOSE'] = 'e'
+        subprocess.run(cmd, shell=True, check=True, env=env)
 
     # Sample WGM data to match synthetic grid extent
     run(f'grdsample {WGMFAAgrd} -RSYNTH.grav.grd -Ggravmodel/faa.cut.grd')

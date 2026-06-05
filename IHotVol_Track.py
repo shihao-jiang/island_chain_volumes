@@ -81,7 +81,9 @@ def IHotVol_Track(AGES, X, Y, Z, grdfile, SFLagegrd):
     """
 
     def run(cmd):
-        subprocess.run(cmd, shell=True, check=True)
+        env = os.environ.copy()
+        env['GMT_VERBOSE'] = 'e'
+        subprocess.run(cmd, shell=True, check=True, env=env)
 
     # Sort age data by longitude
     AGES = AGES[np.argsort(AGES[:, 0])]

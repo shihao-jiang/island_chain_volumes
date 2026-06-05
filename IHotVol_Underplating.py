@@ -40,7 +40,9 @@ def IHotVol_Underplating(Xfl, Yfl, Zfl, Xg, Yg, Zg,
     """
 
     def run(cmd):
-        subprocess.run(cmd, shell=True, check=True)
+        env = os.environ.copy()
+        env['GMT_VERBOSE'] = 'e'
+        subprocess.run(cmd, shell=True, check=True, env=env)
 
     # ------------------------------------------------------------------
     # Mirror and extend the gravity grid to reduce edge effects
@@ -203,22 +205,38 @@ def IHotVol_Underplating(Xfl, Yfl, Zfl, Xg, Yg, Zg,
         return np.real(np.fft.ifft2(result))
 
     finaltopoinverse = topoinverse.copy()
-    prev             = topoinverse.copy()
-    rms_val          = _rms(finaltopoinverse, prev * 0, numrows, numcolumns)
-
+    best_topo        = topoinverse.copy()
+    best_rms         = np.inf
+    prev_rms         = np.inf
     max_iter = 10
     it       = 1
 
+    import warnings
     for n in range(2, max_iter + 1):
-        curr = _next_topo(finaltopoinverse, n, ftot_wn, constant, filt)
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            curr = _next_topo(finaltopoinverse, n, ftot_wn, constant, filt)
         rms_val = _rms(curr, finaltopoinverse, numrows, numcolumns)
+
+        # Stop if nan/inf or diverging (rms increased significantly)
+        if not np.isfinite(rms_val) or np.isnan(curr).any() or (rms_val > prev_rms * 2 and prev_rms < np.inf):
+            print(f'  Underplating iter {n}: diverging, stopping early.')
+            break
+
         print(f'  Underplating iter {n}, rms = {rms_val:.6f} km')
         finaltopoinverse = curr
+        prev_rms = rms_val
         it = n
+
+        if rms_val < best_rms:
+            best_rms  = rms_val
+            best_topo = curr.copy()
+
         if rms_val < criterio:
             break
 
-    print(f'Underplating converged at iteration {it}, rms = {rms_val:.6f} km')
+    finaltopoinverse = best_topo
+    print(f'Underplating best result at iteration {it}, rms = {best_rms:.6f} km')
 
     # ------------------------------------------------------------------
     # Write output grid

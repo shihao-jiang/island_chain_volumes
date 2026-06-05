@@ -6,6 +6,7 @@ before the regional/residual separation and gravity modelling.
 Equivalent to the MATLAB function IHotVol_PickMask.
 """
 
+import os
 import subprocess
 import numpy as np
 import matplotlib
@@ -32,7 +33,9 @@ def IHotVol_PickMask(grdfile):
     """
 
     def run(cmd):
-        subprocess.run(cmd, shell=True, check=True)
+        env = os.environ.copy()
+        env['GMT_VERBOSE'] = 'e'
+        subprocess.run(cmd, shell=True, check=True, env=env)
 
     # Load the bathymetry grid
     X, Y, Z = grdread2(grdfile)

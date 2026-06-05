@@ -5,6 +5,7 @@ Forward gravity model from topographic interfaces.
 Equivalent to the MATLAB function IHotVol_GravForward.
 """
 
+import os
 import subprocess
 import numpy as np
 from scipy.special import erfinv
@@ -43,7 +44,9 @@ def IHotVol_GravForward(grdfile, denangrdfile, edificegrdfile,
     """
 
     def run(cmd):
-        subprocess.run(cmd, shell=True, check=True)
+        env = os.environ.copy()
+        env['GMT_VERBOSE'] = 'e'
+        subprocess.run(cmd, shell=True, check=True, env=env)
 
     # Gravity contribution from sediment/water interface
     run(f'gravfft {denangrdfile} -D{rho_i - rho_w} -E5 -N+a -fg -Ggravmodel/sed.grav.grd')
