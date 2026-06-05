@@ -84,7 +84,7 @@ def IHotVol_PickEdifice(grdfile, AGES):
     grdwrite2(Xres, Yres, INP.astype(float), 'INP.grd')
 
     # Reformat grid with GMT (grdwrite2 output not compatible with grdflexure)
-    run(f'grd2xyz ED.grd | xyz2grd -G{grdfile}_edifice.grd -R{grdfile}.trim')
+    run(f'grd2xyz ED.grd | xyz2grd -G{grdfile}_edifice.grd -R{grdfile}')
 
     # De-NaN the edifice grid (set 0 outside)
     run(f'grdmath {grdfile}_edifice.grd 0 DENAN = {grdfile}_edifice.grd')
@@ -96,9 +96,14 @@ def IHotVol_PickEdifice(grdfile, AGES):
     INP_new   = poly_path.contains_points(flat_pts2).reshape(Xgmesh.shape)
     grdwrite2(Xg, Yg, INP_new.astype(float), 'INP.grd')
 
-    # --- DISPLAY ---
+    # --- DISPLAY: show edifice with white background outside polygon ---
+    Zg_display = Zg.copy()
+    Zg_display[~INP_new] = np.nan   # mask outside polygon to white
+
     fig2, ax2 = plt.subplots(figsize=(10, 14))
-    ax2.contourf(Xgmesh, Ygmesh, Zg, levels=20)
+    ax2.set_facecolor('white')
+    cf = ax2.contourf(Xgmesh, Ygmesh, Zg_display, levels=20, cmap='viridis')
+    plt.colorbar(cf, ax=ax2, label='Depth (m)')
     ax2.set_title('Edifice')
     ax2.set_aspect('equal')
     plt.tight_layout()

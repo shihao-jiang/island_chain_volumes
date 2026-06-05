@@ -90,9 +90,12 @@ def IHotVol_Flexure(loadfile, rho_c, rho_w, rho_m, rho_i,
     # Generate blended flexure grid
     run(f'grdblend Blendfile.txt -Gflexure.{ii}.grd -R{grdfile} -V')
 
-    # Stash pre-blend grids
+    # Stash pre-blend grids (overwrite if already exists)
     for fname in os.listdir('.'):
         if fname.startswith('FLX_comp'):
+            dst = os.path.join('FLXcomptmp', fname)
+            if os.path.exists(dst):
+                os.remove(dst)
             shutil.move(fname, 'FLXcomptmp/')
 
     # DENAN flexure grid (replace NaN with 0)

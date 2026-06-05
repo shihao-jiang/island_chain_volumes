@@ -6,6 +6,7 @@ Adapted from 3DINVER.M (Gomez-Ortiz & Agarwal).
 Equivalent to the MATLAB function IHotVol_Underplating.
 """
 
+import math
 import subprocess
 import numpy as np
 from scipy.signal import windows as sig_windows
@@ -195,7 +196,7 @@ def IHotVol_Underplating(Xfl, Yfl, Zfl, Xg, Yg, Zg,
         series_sum = np.zeros_like(fftbou)
         for k in range(1, n_terms):
             series_sum += (
-                (ftot_wn ** (k - 1)) / np.math.factorial(k)
+                (ftot_wn ** (k - 1)) / math.factorial(k)
             ) * np.fft.fft2(prev ** k)
         series_sum *= filt
         result = constant - series_sum
