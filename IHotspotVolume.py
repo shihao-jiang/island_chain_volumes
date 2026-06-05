@@ -82,12 +82,12 @@ NE = [np.max(AGES[:, 1]) + 10, np.max(AGES[:, 0]) + 10]
 SW = [np.min(AGES[:, 1]) - 10, np.min(AGES[:, 0]) - 10]
 
 # filter parameters for RR separation
-minW  = 800   # minimum filter width candidate for ORS (km)
+minW  = 100   # minimum filter width candidate for ORS (km)
 maxW  = 800   # maximum filter width candidate for ORS (km)
-intW  = 50    # filter width step (km)
+intW  = 100    # filter width step (km)
 level = 300   # step for base contour calculations
 subaq = 1     # 1 = all hotspot is underwater
-mask  = 1     # 1 = prominent regions need masking
+mask  = 0     # 1 = prominent regions need masking
 
 # Flexure model inputs
 rho_c   = 2800    # crust density (kg/m3)
@@ -114,11 +114,12 @@ with open('CORNERS.xy', 'w') as f:
     cornerline = f"{grdname},{NE[1]},{NE[0]},{SW[1]},{SW[0]}\n"
     f.write(cornerline)
 
-# retrieve WGET script
-shutil.copy('./dependencies/WGET_BATHY.sh', './')
-
-# get grid
-run('bash WGET_BATHY.sh')
+# retrieve WGET script and download grid only if not already present
+if not os.path.exists(grdfile):
+    shutil.copy('./dependencies/WGET_BATHY.sh', './')
+    run('bash WGET_BATHY.sh')
+else:
+    print(f'{grdfile} already exists, skipping download.')
 
 # resample high-res to 2 arc-minutes
 run(f'grdsample {grdfile} -R{grdfile} -I2m+e -G{grdfile}')
@@ -144,9 +145,18 @@ else:
     shutil.copy('./dependencies/RR-Sep.sh', './')
     shutil.copy('./dependencies/RR-Sep-single.sh', './')
 
-ORS_L, region = IHotVol_ORS(grdfile, X, Y, Z, minW, maxW, intW, level, mask)
-ORS = np.loadtxt('ORStable.txt')
-print(f'Regional/residual separation complete! ORS optimal filter wavelength {ORS_L[0]} km')
+if not os.path.exists('ORStable.txt'):
+    ORS_L, region = IHotVol_ORS(grdfile, X, Y, Z, minW, maxW, intW, level, mask)
+    print(f'Regional/residual separation complete! ORS optimal filter wavelength {ORS_L[0]} km')
+else:
+    print('ORStable.txt already exists, skipping ORS.')
+    ORS = np.loadtxt('ORStable.txt')
+    ORS_L = ORS[ORS[:, 4] == ORS[:, 4].max(), :]
+    if ORS_L.ndim == 2:
+        ORS_L = ORS_L[0]
+    region = (f'-R{np.ceil(X.min()) + 0.05:.4f}/{np.floor(X.max()) - 0.05:.4f}'
+              f'/{np.ceil(Y.min()) + 0.05:.4f}/{np.floor(Y.max()) - 0.05:.4f}')
+    print(f'Loaded ORS optimal filter wavelength {ORS_L[0]} km')
 
 # =============================================================================
 # -- (4) Generate hotspot age track and clipped age sub-grids
