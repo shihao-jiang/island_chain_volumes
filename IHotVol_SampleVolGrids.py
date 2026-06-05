@@ -73,10 +73,10 @@ def IHotVol_SampleVolGrids(grdfile, ii, HSPT_TRK, mask):
         os.remove(xes_file)
 
     # Sample resultant grids along track with cross-sections
-    run((f"cat track.txt | awk '{{print $1,$2}}' | "
-         f"grdtrack -R{grdfile} -V "
-         f"-G{grdfile}_edifice.grd "
-         f"-Gflexure.DENAN.{ii}.grd "
-         f"-GUplate.{ii}.grd "
-         f"-GUplate.INP.{ii}.grd "
-         f"-C1000k/4k/4k -Ar > {xes_file}"))
+    run((f'bash -c "cat track.txt | awk \'{{print $1,$2}}\' | '
+         f'grdtrack -R{grdfile} -V '
+         f'-G{grdfile}_edifice.grd '
+         f'-Gflexure.DENAN.{ii}.grd '
+         f'-GUplate.{ii}.grd '
+         f'-GUplate.INP.{ii}.grd '
+         f'-C1000k/4k/4k -Ar > {xes_file}"'))

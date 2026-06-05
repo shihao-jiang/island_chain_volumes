@@ -8,6 +8,7 @@ Equivalent to the MATLAB function IHotVol_ORS.
 import subprocess
 import shutil
 import numpy as np
+import platform
 
 
 def IHotVol_ORS(grdfile, X, Y, Z, minW, maxW, intW, level, mask):
@@ -43,11 +44,11 @@ def IHotVol_ORS(grdfile, X, Y, Z, minW, maxW, intW, level, mask):
     if mask == 1:
         shutil.copy(grdfile, 'backupgrdfile_ORS.grd')
         run(f'grdmath MASK.grd {grdfile} MUL 0 DENAN = {grdfile}')
-        cmd = (f'sh ./RR-Sep_mask.sh {grdfile} {region} '
+        cmd = (f'bash ./RR-Sep_mask.sh {grdfile} {region} '
                f'{minW} {maxW} {intW} {level}')
         run(cmd)
     else:
-        cmd = (f'sh ./RR-Sep.sh {grdfile} {region} '
+        cmd = (f'bash ./RR-Sep.sh {grdfile} {region} '
                f'{minW} {maxW} {intW} {level}')
         run(cmd)
 
@@ -65,11 +66,11 @@ def IHotVol_ORS(grdfile, X, Y, Z, minW, maxW, intW, level, mask):
     print('Filter wavelength found, performing final separation')
 
     if mask == 1:
-        cmd = (f'sh ./RR-Sep-single_mask.sh {grdfile} {region} '
+        cmd = (f'bash ./RR-Sep-single_mask.sh {grdfile} {region} '
                f'{ORS_L[0]} {ORS_L[0]} {intW} {level}')
         run(cmd)
     else:
-        cmd = (f'sh ./RR-Sep-single.sh {grdfile} {region} '
+        cmd = (f'bash ./RR-Sep-single.sh {grdfile} {region} '
                f'{ORS_L[0]} {ORS_L[0]} {intW} {level}')
         run(cmd)
 

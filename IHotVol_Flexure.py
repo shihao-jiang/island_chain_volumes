@@ -91,9 +91,9 @@ def IHotVol_Flexure(loadfile, rho_c, rho_w, rho_m, rho_i,
     run(f'grdblend Blendfile.txt -Gflexure.{ii}.grd -R{grdfile} -V')
 
     # Stash pre-blend grids
-    for f in os.listdir('.'):
-        if f.startswith('FLX_comp'):
-            shutil.move(f, 'FLXcomptmp/')
+    for fname in os.listdir('.'):
+        if fname.startswith('FLX_comp'):
+            shutil.move(fname, 'FLXcomptmp/')
 
     # DENAN flexure grid (replace NaN with 0)
     run(f'grdmath flexure.{ii}.grd 0 DENAN = flexure.DENAN.{ii}.grd')

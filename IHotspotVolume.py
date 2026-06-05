@@ -25,6 +25,7 @@ Revision history (from original MATLAB):
 """
 
 import os
+import shutil
 import subprocess
 import numpy as np
 import matplotlib
@@ -57,23 +58,23 @@ def run(cmd):
 # =============================================================================
 
 # grid file (name without extension)
-grdname = ' '
+grdname = 'Balleny'
 grdfile = grdname + '.grd'
 
 # AGES file  [lon, lat, age_Ma]
 AGES = np.loadtxt('AGES.txt')
 
 # seafloor age file
-SFLagegrd = '../../global/infl.age.3.6.grd'
+SFLagegrd = './global/infl.age.3.6.grd'
 
 # sediment thickness file
-SEDthckgrd = '../../global/sedthick_world_v2.grd'
+SEDthckgrd = './global/sedthick_world_v2.grd'
 
 # WGM FAA file
-WGMFAAgrd = '../../global/WGM2012_Freeair_ponc_2min_360.grd'
+WGMFAAgrd = './global/WGM2012_Freeair_ponc_2min_360.grd'
 
 # adjust AGES data – uncomment if needed
-# AGES[AGES[:, 0] < 0, 0] += 360
+AGES[AGES[:, 0] < 0, 0] += 360
 
 # northeast bathy corner  [north, east]
 NE = [np.max(AGES[:, 1]) + 10, np.max(AGES[:, 0]) + 10]
@@ -114,10 +115,10 @@ with open('CORNERS.xy', 'w') as f:
     f.write(cornerline)
 
 # retrieve WGET script
-run('cp ../../dependencies/WGET_BATHY.sh ./')
+shutil.copy('./dependencies/WGET_BATHY.sh', './')
 
 # get grid
-run('sh WGET_BATHY.sh')
+run('bash WGET_BATHY.sh')
 
 # resample high-res to 2 arc-minutes
 run(f'grdsample {grdfile} -R{grdfile} -I2m+e -G{grdfile}')
@@ -137,11 +138,11 @@ if mask == 1:
 # =============================================================================
 
 if mask == 1:
-    run('cp ../../dependencies/RR-Sep_mask.sh ./')
-    run('cp ../../dependencies/RR-Sep-single_mask.sh ./')
+    shutil.copy('./dependencies/RR-Sep_mask.sh', './')
+    shutil.copy('./dependencies/RR-Sep-single_mask.sh', './')
 else:
-    run('cp ../../dependencies/RR-Sep.sh ./')
-    run('cp ../../dependencies/RR-Sep-single.sh ./')
+    shutil.copy('./dependencies/RR-Sep.sh', './')
+    shutil.copy('./dependencies/RR-Sep-single.sh', './')
 
 ORS_L, region = IHotVol_ORS(grdfile, X, Y, Z, minW, maxW, intW, level, mask)
 ORS = np.loadtxt('ORStable.txt')
