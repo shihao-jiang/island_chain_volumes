@@ -29,7 +29,7 @@ import shutil
 import subprocess
 import numpy as np
 import matplotlib
-matplotlib.use('TkAgg')  # change backend if needed
+matplotlib.use('Qt5Agg')  # change backend if needed
 import matplotlib.pyplot as plt
 
 from grd_utils import grdread2
@@ -249,7 +249,7 @@ Xg, Yg, finaltopoinverse = IHotVol_Underplating(
 # =============================================================================
 
 residDiff = [1e10]  # index 0 corresponds to ii=1
-max_iterations = 10  # maximum number of flexure/underplating iterations
+max_iterations = 5  # maximum number of flexure/underplating iterations
 
 while residDiff[ii - 1] > 0.0001 and ii < max_iterations:
 
@@ -337,8 +337,27 @@ except Exception:
     pass
 VOL = np.array([])
 
-# volume calculation  (Xes must be loaded from step 13)
-Xes = np.loadtxt(f'{grdname}Xes.txt')
+# volume calculation - load Xes.txt, inserting NaN rows at GMT '>' segment headers
+def load_gmt_table(filename):
+    """Load a GMT multisegment table, replacing '>' header lines with NaN rows."""
+    rows = []
+    ncols = None
+    with open(filename, 'r') as fh:
+        for line in fh:
+            line = line.strip()
+            if not line:
+                continue
+            if line.startswith('>'):
+                if ncols is not None:
+                    rows.append([np.nan] * ncols)
+            else:
+                vals = [float(v) if v != 'NaN' else np.nan for v in line.split()]
+                if ncols is None:
+                    ncols = len(vals)
+                rows.append(vals)
+    return np.array(rows)
+
+Xes = load_gmt_table(f'{grdfile}Xes.txt')
 VOL, Crosses = IHotVol_VolumeSlices(Xes, HSPT_TRK)
 
 # generate age-volume plot

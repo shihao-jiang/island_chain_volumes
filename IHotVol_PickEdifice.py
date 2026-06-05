@@ -9,7 +9,7 @@ import os
 import subprocess
 import numpy as np
 import matplotlib
-matplotlib.use('TkAgg')   # change backend if needed (e.g. 'Qt5Agg')
+matplotlib.use('Qt5Agg')   # change backend if needed (e.g. 'Qt5Agg')
 import matplotlib.pyplot as plt
 from matplotlib.path import Path
 from grd_utils import grdread2, grdwrite2

@@ -10,7 +10,7 @@ import os
 import subprocess
 import numpy as np
 import matplotlib
-matplotlib.use('TkAgg')
+matplotlib.use('Qt5Agg')
 import matplotlib.pyplot as plt
 from scipy.optimize import minimize_scalar
 from grd_utils import grdread2

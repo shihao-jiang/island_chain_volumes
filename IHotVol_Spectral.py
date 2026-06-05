@@ -8,7 +8,7 @@ Equivalent to the MATLAB function IHotVol_Spectral.
 import os
 import numpy as np
 import matplotlib
-matplotlib.use('TkAgg')
+matplotlib.use('Qt5Agg')
 import matplotlib.pyplot as plt
 from scipy.signal import find_peaks
 
@@ -144,7 +144,12 @@ def IHotVol_Spectral(VOL, grdfile):
 
     plt.tight_layout()
     fig.savefig('results/ComponentPower.eps')
-    plt.show()
+    fig.savefig('results/ComponentPower.png', dpi=150)
+    print('Saved results/ComponentPower.png')
+    try:
+        plt.close(fig)
+    except Exception:
+        pass
 
     # --- Total power plot ---
     total_signal = VOL[:, 2] + VOL[:, 3] + VOL[:, 4]
@@ -183,7 +188,12 @@ def IHotVol_Spectral(VOL, grdfile):
 
     plt.tight_layout()
     fig2.savefig('results/TotalPower.eps')
-    plt.show()
+    fig2.savefig('results/TotalPower.png', dpi=150)
+    print('Saved results/TotalPower.png')
+    try:
+        plt.close(fig2)
+    except Exception:
+        pass
 
     PEAKS.update(Pow)
 

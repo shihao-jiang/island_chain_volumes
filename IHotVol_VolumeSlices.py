@@ -33,6 +33,12 @@ def IHotVol_VolumeSlices(Xes, HSPT_TRK):
     """
 
     # Split Xes into individual profiles at NaN rows
+    # Add sentinel NaN rows at start and end if not already present
+    if not np.isnan(Xes[0, 0]):
+        Xes = np.vstack([np.full((1, Xes.shape[1]), np.nan), Xes])
+    if not np.isnan(Xes[-1, 0]):
+        Xes = np.vstack([Xes, np.full((1, Xes.shape[1]), np.nan)])
+
     nan_rows = np.where(np.isnan(Xes[:, 0]))[0]
 
     Crosses = []
@@ -51,7 +57,7 @@ def IHotVol_VolumeSlices(Xes, HSPT_TRK):
         PRFL[np.isnan(PRFL)] = 0.0
 
         # ---------- Edifice contribution ----------
-        VolEd = np.trapz(PRFL[:, 4] / 1e3, PRFL[:, 2])
+        VolEd = np.trapezoid(PRFL[:, 4] / 1e3, PRFL[:, 2])
 
         # ---------- Infill (flexure-fill) contribution ----------
         FLX = np.column_stack([PRFL[:, 2], -PRFL[:, 5]])
@@ -67,7 +73,7 @@ def IHotVol_VolumeSlices(Xes, HSPT_TRK):
         best_tw  = _fit_gausswin(FLX[:, 1], PEAK)
         GUSFLX   = sig_windows.gaussian(len(FLX), best_tw) * PEAK  # noqa (stored, unused in integral)
 
-        VolFill = np.trapz(FLX[:, 1] / 1e3, FLX[:, 0])
+        VolFill = np.trapezoid(FLX[:, 1] / 1e3, FLX[:, 0])
 
         # ---------- Underplating contribution ----------
         UPL = np.column_stack([PRFL[:, 2], PRFL[:, 6], PRFL[:, 7]])
@@ -82,7 +88,7 @@ def IHotVol_VolumeSlices(Xes, HSPT_TRK):
         best_tw_upl = _fit_gausswin(UPL[:, 1], PEAK_upl)
         GUSUPL      = sig_windows.gaussian(len(UPL), best_tw_upl) * UPL[:, 1].max()
 
-        VolUpl = 0.683 * np.trapz(GUSUPL, UPL[:, 0])
+        VolUpl = 0.683 * np.trapezoid(GUSUPL, UPL[:, 0])
 
         # ---------- Location and cumulative distance ----------
         zero_idx = np.where(PRFL[:, 2] == 0)[0]
