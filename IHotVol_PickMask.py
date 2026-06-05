@@ -35,7 +35,7 @@ def IHotVol_PickMask(grdfile):
     def run(cmd):
         env = os.environ.copy()
         env['GMT_VERBOSE'] = 'e'
-        subprocess.run(cmd, shell=True, check=True, env=env)
+        subprocess.run(cmd + ' 2>/dev/null', shell=True, check=True, env=env)
 
     # Load the bathymetry grid
     X, Y, Z = grdread2(grdfile)

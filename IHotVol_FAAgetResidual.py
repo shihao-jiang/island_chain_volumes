@@ -33,7 +33,7 @@ def IHotVol_FAAgetResidual(ORS_L, WGMFAAgrd, mask, subaq):
     def run(cmd):
         env = os.environ.copy()
         env['GMT_VERBOSE'] = 'e'
-        subprocess.run(cmd, shell=True, check=True, env=env)
+        subprocess.run(cmd + ' 2>/dev/null', shell=True, check=True, env=env)
 
     # Sample WGM data to match synthetic grid extent
     run(f'grdsample {WGMFAAgrd} -RSYNTH.grav.grd -Ggravmodel/faa.cut.grd')

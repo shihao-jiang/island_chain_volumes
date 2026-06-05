@@ -51,8 +51,8 @@ from IHotVol_Spectral import IHotVol_Spectral
 def run(cmd):
     """Run a shell (GMT) command, suppressing GMT warnings."""
     env = os.environ.copy()
-    env['GMT_VERBOSE'] = 'e'   # e = errors only, suppress warnings
-    subprocess.run(cmd, shell=True, check=True, env=env)
+    env['GMT_VERBOSE'] = 'e'
+    subprocess.run(cmd + ' 2>/dev/null', shell=True, check=True, env=env)
 
 
 # =============================================================================
@@ -249,11 +249,12 @@ Xg, Yg, finaltopoinverse = IHotVol_Underplating(
 # =============================================================================
 
 residDiff = [1e10]  # index 0 corresponds to ii=1
+max_iterations = 10  # maximum number of flexure/underplating iterations
 
-while residDiff[ii - 1] > 0.0001:
+while residDiff[ii - 1] > 0.0001 and ii < max_iterations:
 
     ii += 1
-    print(f'Iteration {ii}')
+    print(f'Iteration {ii} / {max_iterations}')
 
     # resample/fit
     run(f'grdsample Uplate.{ii-1}.grd -R{grdfile}_edifice.grd -GUplate.{ii-1}.grd')
@@ -299,6 +300,11 @@ while residDiff[ii - 1] > 0.0001:
     # calculate underplating
     Xg, Yg, finaltopoinverse = IHotVol_Underplating(
         Xflx, Yflx, Zflx, XResG, YResG, ZResG, ii, grdfile, ORS_L, 1e-5)
+
+if ii >= max_iterations:
+    print(f'Stopped: reached maximum iterations ({max_iterations}).')
+else:
+    print(f'Converged after {ii} iterations.')
 
 # final flexure calculation using only the compensated edifice
 run(f'grdsample {grdfile}_edifice.grd -R{grdfile}_edifice.{ii}.grd -G{grdfile}_edifice.flexsample.grd')

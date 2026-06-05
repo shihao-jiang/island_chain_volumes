@@ -43,7 +43,7 @@ def IHotVol_Flexure(loadfile, rho_c, rho_w, rho_m, rho_i,
     def run(cmd):
         env = os.environ.copy()
         env['GMT_VERBOSE'] = 'e'
-        subprocess.run(cmd, shell=True, check=True, env=env)
+        subprocess.run(cmd + ' 2>/dev/null', shell=True, check=True, env=env)
 
     # Seconds per year
     sec_per_yr = 365.25 * 24 * 3600
@@ -90,7 +90,7 @@ def IHotVol_Flexure(loadfile, rho_c, rho_w, rho_m, rho_i,
         fid.write('\n'.join(blend_lines) + '\n')
 
     # Generate blended flexure grid
-    run(f'grdblend Blendfile.txt -Gflexure.{ii}.grd -R{grdfile} -V')
+    run(f'grdblend Blendfile.txt -Gflexure.{ii}.grd -R{grdfile}')
 
     # Stash pre-blend grids (overwrite if already exists)
     for fname in os.listdir('.'):

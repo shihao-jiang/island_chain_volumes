@@ -8,7 +8,7 @@ Equivalent to the MATLAB function IHotVol_VolumeSlices.
 import numpy as np
 from scipy.signal import windows as sig_windows
 from IHotVol_Track import _deg2km   # reuse great-circle helper
-
+import os
 
 def IHotVol_VolumeSlices(Xes, HSPT_TRK):
     """

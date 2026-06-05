@@ -11,6 +11,7 @@ import subprocess
 import numpy as np
 from scipy.signal import windows as sig_windows
 from grd_utils import grdwrite2
+import os
 
 
 def IHotVol_Underplating(Xfl, Yfl, Zfl, Xg, Yg, Zg,
@@ -42,7 +43,7 @@ def IHotVol_Underplating(Xfl, Yfl, Zfl, Xg, Yg, Zg,
     def run(cmd):
         env = os.environ.copy()
         env['GMT_VERBOSE'] = 'e'
-        subprocess.run(cmd, shell=True, check=True, env=env)
+        subprocess.run(cmd + ' 2>/dev/null', shell=True, check=True, env=env)
 
     # ------------------------------------------------------------------
     # Mirror and extend the gravity grid to reduce edge effects

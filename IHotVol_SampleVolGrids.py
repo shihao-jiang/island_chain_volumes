@@ -43,7 +43,7 @@ def IHotVol_SampleVolGrids(grdfile, ii, HSPT_TRK, mask):
     def run(cmd):
         env = os.environ.copy()
         env['GMT_VERBOSE'] = 'e'
-        subprocess.run(cmd, shell=True, check=True, env=env)
+        subprocess.run(cmd + ' 2>/dev/null', shell=True, check=True, env=env)
 
     # Reformat grids
     run(f'grd2xyz Uplate.{ii}.grd | xyz2grd -GUplate.{ii}.grd -R{grdfile}')

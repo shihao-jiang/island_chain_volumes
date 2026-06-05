@@ -46,7 +46,7 @@ def IHotVol_GravForward(grdfile, denangrdfile, edificegrdfile,
     def run(cmd):
         env = os.environ.copy()
         env['GMT_VERBOSE'] = 'e'
-        subprocess.run(cmd, shell=True, check=True, env=env)
+        subprocess.run(cmd + ' 2>/dev/null', shell=True, check=True, env=env)
 
     # Gravity contribution from sediment/water interface
     run(f'gravfft {denangrdfile} -D{rho_i - rho_w} -E5 -N+a -fg -Ggravmodel/sed.grav.grd')
@@ -87,7 +87,6 @@ def IHotVol_GravForward(grdfile, denangrdfile, edificegrdfile,
         run(f'grdmath gravmodel/depth.{iso_T}C.grd 0 DENAN = gravmodel/depth.{iso_T}C.grd')
 
         if iso_T == 50:
-            import os
             if os.path.exists('thermal.grav.grd'):
                 os.remove('thermal.grav.grd')
             run((f'gravfft gravmodel/depth.{iso_T}C.grd -D{-delRho} '

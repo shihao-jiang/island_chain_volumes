@@ -35,7 +35,7 @@ def IHotVol_PickEdifice(grdfile, AGES):
     def run(cmd):
         env = os.environ.copy()
         env['GMT_VERBOSE'] = 'e'
-        subprocess.run(cmd, shell=True, check=True, env=env)
+        subprocess.run(cmd + ' 2>/dev/null', shell=True, check=True, env=env)
 
     # Load residual grid
     Xres, Yres, Zres = grdread2(f'{grdfile}_residual.grd')

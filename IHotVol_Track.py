@@ -83,7 +83,7 @@ def IHotVol_Track(AGES, X, Y, Z, grdfile, SFLagegrd):
     def run(cmd):
         env = os.environ.copy()
         env['GMT_VERBOSE'] = 'e'
-        subprocess.run(cmd, shell=True, check=True, env=env)
+        subprocess.run(cmd + ' 2>/dev/null', shell=True, check=True, env=env)
 
     # Sort age data by longitude
     AGES = AGES[np.argsort(AGES[:, 0])]
@@ -120,7 +120,8 @@ def IHotVol_Track(AGES, X, Y, Z, grdfile, SFLagegrd):
     plt.draw()
     plt.pause(0.1)
 
-    numFit = int(input('What order polynomial best follows the hotspot?\n> '))
+    # numFit = int(input('What order polynomial best follows the hotspot?\n> '))
+    numFit = 3
 
     p = np.polyfit(Xtrk, Ytrk, numFit)
 
@@ -187,7 +188,8 @@ def IHotVol_Track(AGES, X, Y, Z, grdfile, SFLagegrd):
     plt.draw()
     plt.pause(0.1)
 
-    numFit2 = int(input('What order polynomial best follows the age/distance relationship?\n> '))
+    # numFit2 = int(input('What order polynomial best follows the age/distance relationship?\n> '))
+    numFit2 = 2
     pA = np.polyfit(TMPTRK[:, 3], TMPTRK[:, 2], numFit2)
 
     TRK_age = np.polyval(pA, TRK[:, 2])  # age from along-track distance
