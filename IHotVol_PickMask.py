@@ -38,7 +38,10 @@ def IHotVol_PickMask(grdfile):
     X, Y, Z = grdread2(grdfile)
     Xmesh, Ymesh = np.meshgrid(X, Y)
 
-    plt.close('all')
+    try:
+        plt.close('all')
+    except Exception:
+        pass
 
     fig, ax = plt.subplots(figsize=(10, 14))
     ax.contourf(Xmesh, Ymesh, Z, levels=20)
@@ -51,7 +54,10 @@ def IHotVol_PickMask(grdfile):
     print("Please click to draw a polygon around the region to MASK OUT.")
     print("Press ENTER when finished.")
     pts = plt.ginput(n=-1, timeout=0)
-    plt.close('all')
+    try:
+        plt.close('all')
+    except Exception:
+        pass
 
     XpolyM = np.array([p[0] for p in pts])
     YpolyM = np.array([p[1] for p in pts])
@@ -89,7 +95,10 @@ def IHotVol_PickMask2(refgrdfile):
     X, Y, Z = grdread2(refgrdfile)
     Xmesh, Ymesh = np.meshgrid(X, Y)
 
-    plt.close('all')
+    try:
+        plt.close('all')
+    except Exception:
+        pass
     fig, ax = plt.subplots(figsize=(10, 14))
     ax.contourf(Xmesh, Ymesh, Z, levels=20)
     ax.set_title('Pick secondary mask polygon')
@@ -98,7 +107,10 @@ def IHotVol_PickMask2(refgrdfile):
 
     print("Please click to draw a secondary mask polygon. Press ENTER when finished.")
     pts = plt.ginput(n=-1, timeout=0)
-    plt.close('all')
+    try:
+        plt.close('all')
+    except Exception:
+        pass
 
     XpolyM = np.array([p[0] for p in pts])
     YpolyM = np.array([p[1] for p in pts])

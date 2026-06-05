@@ -40,7 +40,10 @@ def IHotVol_PickEdifice(grdfile, AGES):
     # Zero out negative anomalies
     Zres[Zres <= 0] = 0.0
 
-    plt.close('all')
+    try:
+        plt.close('all')
+    except Exception:
+        pass
 
     # --- PICKING ---
     fig, ax = plt.subplots(figsize=(10, 14))
@@ -57,7 +60,10 @@ def IHotVol_PickEdifice(grdfile, AGES):
     print("Please click to draw a polygon around the edifice of interest.")
     print("Press ENTER when finished.")
     pts = plt.ginput(n=-1, timeout=0)
-    plt.close('all')
+    try:
+        plt.close('all')
+    except Exception:
+        pass
 
     Xpoly = np.array([p[0] for p in pts])
     Ypoly = np.array([p[1] for p in pts])

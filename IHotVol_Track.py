@@ -93,7 +93,10 @@ def IHotVol_Track(AGES, X, Y, Z, grdfile, SFLagegrd):
     # Max polynomial order
     pmax = min(len(AGES) - 1, 6)
 
-    plt.close('all')
+    try:
+        plt.close('all')
+    except Exception:
+        pass
 
     # Inspection map
     Xmesh, Ymesh = np.meshgrid(X, Y)
@@ -161,7 +164,10 @@ def IHotVol_Track(AGES, X, Y, Z, grdfile, SFLagegrd):
     pDA = np.polyfit(TRK[:, 0], TRK[:, 2], numFit)
     TMPTRK = np.column_stack([TMPTRK, np.polyval(pDA, TMPTRK[:, 0])])
 
-    plt.close('all')
+    try:
+        plt.close('all')
+    except Exception:
+        pass
 
     fig2, ax2 = plt.subplots(figsize=(8, 6))
     ax2.plot(TMPTRK[:, 3], TMPTRK[:, 2], 'rs', markersize=8)
@@ -231,6 +237,9 @@ def IHotVol_Track(AGES, X, Y, Z, grdfile, SFLagegrd):
     # Remove duplicate rows
     HSPT_TRK = np.unique(HSPT_TRK, axis=0)
 
-    plt.close('all')
+    try:
+        plt.close('all')
+    except Exception:
+        pass
 
     return HSPT_TRK, AGES, pA, TMPTRK

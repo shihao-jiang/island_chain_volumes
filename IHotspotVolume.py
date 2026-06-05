@@ -77,13 +77,13 @@ WGMFAAgrd = './global/WGM2012_Freeair_ponc_2min_360.grd'
 AGES[AGES[:, 0] < 0, 0] += 360
 
 # northeast bathy corner  [north, east]
-NE = [np.max(AGES[:, 1]) + 10, np.max(AGES[:, 0]) + 10]
+NE = [np.max(AGES[:, 1]) + 5, np.max(AGES[:, 0]) + 5]
 # southwest bathy corner  [south, west]
-SW = [np.min(AGES[:, 1]) - 10, np.min(AGES[:, 0]) - 10]
+SW = [np.min(AGES[:, 1]) - 5, np.min(AGES[:, 0]) - 5]
 
 # filter parameters for RR separation
 minW  = 100   # minimum filter width candidate for ORS (km)
-maxW  = 800   # maximum filter width candidate for ORS (km)
+maxW  = 600   # maximum filter width candidate for ORS (km)
 intW  = 100    # filter width step (km)
 level = 300   # step for base contour calculations
 subaq = 1     # 1 = all hotspot is underwater
@@ -323,7 +323,10 @@ IHotVol_SampleVolGrids(grdfile, ii, HSPT_TRK, mask)
 # -- (14) Calculate volumes
 # =============================================================================
 
-plt.close('all')
+try:
+    plt.close('all')
+except Exception:
+    pass
 VOL = np.array([])
 
 # volume calculation  (Xes must be loaded from step 13)
