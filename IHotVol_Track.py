@@ -137,8 +137,8 @@ def IHotVol_Track(AGES, X, Y, Z, grdfile, SFLagegrd):
     np.savetxt('track.txt', TMPTRK)
 
     # Generate track cross-sections with GMT
-    run(f'bash -c "cat track.txt | awk \'{{print $1,$2}}\' | grdtrack -G{grdfile} -C2k/1/20 -Ar > track_cross.txt"')
-    run('bash -c "cat track_cross.txt | awk \'{if ($3==0) print $1,$2}\' > track20k.txt"')
+    run(f"cat track.txt | awk '{{print $1,$2}}' | grdtrack -G{grdfile} -C2k/1/20 -Ar > track_cross.txt")
+    run("awk '$3==0 {print $1,$2}' track_cross.txt > track20k.txt")
 
     TRK = np.loadtxt('track20k.txt')
 
