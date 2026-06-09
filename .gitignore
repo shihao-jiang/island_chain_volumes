@@ -11,6 +11,10 @@ __pycache__/
 *.npz
 *.npy
 
+# But upload everything inside dependencies/
+!dependencies/
+!dependencies/**
+
 # GMT temporary files
 gmt.history
 gmt.conf
