@@ -4,11 +4,6 @@ IHotVol_Underplating.py
 Parker-Oldenburg gravity inversion for underplating thickness.
 Adapted from 3DINVER.M (Gomez-Ortiz & Agarwal).
 Equivalent to the MATLAB function IHotVol_Underplating.
-
-NOTE: This version matches the original MATLAB behaviour exactly —
-no divergence check, runs up to 10 iterations, returns the last result.
-For a safer version with divergence detection, use
-IHotVol_Underplating_divergence_safe.py.
 """
 
 import math
@@ -27,7 +22,7 @@ def IHotVol_Underplating(Xfl, Yfl, Zfl, Xg, Yg, Zg,
 
     Parameters
     ----------
-    Xfl      : 1-D ndarray – flexure x coords
+    Xfl      : 1-D ndarray – flexure x coords (used for z0 via Zfl)
     Yfl      : 1-D ndarray – flexure y coords
     Zfl      : 2-D ndarray – flexure values (used to set reference depth)
     Xg       : 1-D ndarray – gravity x coords
@@ -40,8 +35,8 @@ def IHotVol_Underplating(Xfl, Yfl, Zfl, Xg, Yg, Zg,
 
     Returns
     -------
-    Xg               : 1-D ndarray
-    Yg               : 1-D ndarray
+    Xg               : 1-D ndarray – (possibly padded) x coords
+    Yg               : 1-D ndarray – (possibly padded) y coords
     finaltopoinverse : 2-D ndarray – estimated underplating topography (km)
     """
 
@@ -75,6 +70,7 @@ def IHotVol_Underplating(Xfl, Yfl, Zfl, Xg, Yg, Zg,
     boxEl = max(int(2 ** np.ceil(np.log2(nx))),
                 int(2 ** np.ceil(np.log2(ny))))
 
+    # Avoid grossly over-sizing one dimension
     def _half_pow2(n):
         p = int(2 ** np.ceil(np.log2(n)))
         return int(p // 2 + (p - p // 2) // 2)
@@ -106,25 +102,25 @@ def IHotVol_Underplating(Xfl, Yfl, Zfl, Xg, Yg, Zg,
     mid_row = numrows // 2
     mid_col = numcolumns // 2
 
-    from IHotVol_Track import _deg2km
-    longx = _deg2km(Yg[mid_row], Xg[0],     Yg[mid_row], Xg[-1])
-    longy = _deg2km(Yg[0],       Xg[mid_col], Yg[-1],    Xg[mid_col])
+    from IHotVol_Track import _deg2km   # reuse great-circle helper
+    longx = _deg2km(Yg[mid_row], Xg[0],    Yg[mid_row], Xg[-1])
+    longy = _deg2km(Yg[0],       Xg[mid_col], Yg[-1],   Xg[mid_col])
 
-    contrast   = 0.3
-    z0         = 11 + abs(np.nanmin(Zfl)) / 1e3
-    WH         = 1 / 100
-    SH         = 1 / 80
-    truncation = 0.1
+    contrast = 0.3          # density contrast (g/cm3)
+    z0       = 11 + abs(np.nanmin(Zfl)) / 1e3   # mean reference depth (km)
+    WH       = 1 / 100      # smaller cut-off freq (1/km)
+    SH       = 1 / 80       # larger  cut-off freq (1/km)
+    truncation = 0.1        # Tukey window truncation fraction
 
     # ------------------------------------------------------------------
     # Demean and window the input gravity
     # ------------------------------------------------------------------
     bou = Zg - np.nanmean(Zg)
 
-    wrows = sig_windows.tukey(numrows,    truncation)
-    wcols = sig_windows.tukey(numcolumns, truncation)
-    w2    = np.outer(wrows, wcols)
-    bou   = bou * w2
+    wrows    = sig_windows.tukey(numrows,    truncation)
+    wcols    = sig_windows.tukey(numcolumns, truncation)
+    w2       = np.outer(wrows, wcols)
+    bou      = bou * w2
 
     fftbou = np.fft.fft2(bou)
 
@@ -140,6 +136,7 @@ def IHotVol_Underplating(Xfl, Yfl, Zfl, Xg, Yg, Zg,
             f_arr[f_idx, g_idx] = np.sqrt(
                 ((f_idx) / longx) ** 2 + ((g_idx) / longy) ** 2)
 
+    # Mirror to full size
     f2 = np.fliplr(f_arr)
     f3 = np.flipud(f_arr)
     f4 = np.flipud(np.fliplr(f_arr))
@@ -163,16 +160,7 @@ def IHotVol_Underplating(Xfl, Yfl, Zfl, Xg, Yg, Zg,
     ftot_wn = ftot * (2 * np.pi)   # convert to wavenumber
 
     # ------------------------------------------------------------------
-    # First term of the Parker series
-    # ------------------------------------------------------------------
-    # NOTE: G = 6.67 in CGS/mGal units (depth in km, density in g/cm³, gravity in mGal)
-    # This matches MATLAB's `down = 2*pi*6.67*contrast`
-    up       = -(fftbou * np.exp(z0 * ftot_wn))
-    down     = 2 * np.pi * 6.67 * contrast
-    constant = up / down
-
-    # ------------------------------------------------------------------
-    # High-cut filter  (uses ftot, i.e. 1/wavelength, not wavenumber)
+    # High-cut filter
     # ------------------------------------------------------------------
     filt = np.zeros_like(ftot)
     for r in range(numrows):
@@ -183,107 +171,68 @@ def IHotVol_Underplating(Xfl, Yfl, Zfl, Xg, Yg, Zg,
             elif fv < SH:
                 filt[r, c] = 0.5 * (1 + np.cos(
                     (2 * np.pi * fv - 2 * np.pi * WH) / (2 * (SH - WH))))
+            # else 0 (already zero)
 
-    constant = constant * filt   # apply filter to first term
+    # ------------------------------------------------------------------
+    # First term of the Parker series
+    # ------------------------------------------------------------------
+    up       = -(fftbou * np.exp(z0 * ftot_wn))
+    down     = 2 * np.pi * 6.67 * contrast   # G=6.67 in CGS/mGal units (depth km, density g/cm³, gravity mGal)
+    constant = (up / down) * filt
 
     topoinverse = np.real(np.fft.ifft2(constant))
 
     # ------------------------------------------------------------------
-    # Iterative Parker-Oldenburg refinement — matches MATLAB exactly
-    # No divergence check; runs until rms < criterio or 10 iterations
+    # Iterative Parker-Oldenburg refinement (up to 10 iterations)
     # ------------------------------------------------------------------
     def _rms(a, b, nr, nc):
         diff = (a - b) ** 2
         return np.sqrt(np.sum(diff) / (2 * nr * nc))
 
-    def _series_sum(prev, n_terms):
-        """
-        Sum Parker series correction terms k=2..n_terms using prev as topography.
-        Matches MATLAB exactly: each iteration n adds terms k=2..n, where
-        term k = freq^(k-1)/k! * FFT(topo^k)
-        """
-        s = np.zeros_like(fftbou, dtype=complex)
-        for k in range(2, n_terms + 1):
-            s += ((ftot_wn ** (k - 1)) / math.factorial(k)) * np.fft.fft2(prev ** k)
-        return s * filt
+    def _next_topo(prev, n_terms, ftot_wn, constant, filt):
+        """Compute topo estimate using n_terms terms of the Parker series."""
+        series_sum = np.zeros_like(fftbou, dtype=complex)
+        for k in range(2, n_terms + 1):   # k=2..n_terms, matching MATLAB
+            series_sum += (
+                (ftot_wn ** (k - 1)) / math.factorial(k)
+            ) * np.fft.fft2(prev ** k)
+        series_sum *= filt
+        result = constant - series_sum
+        return np.real(np.fft.ifft2(result))
 
     finaltopoinverse = topoinverse.copy()
-    iter_reached     = 1
-    rms              = np.inf
+    best_topo        = topoinverse.copy()
+    best_rms         = np.inf
+    prev_rms         = np.inf
+    max_iter = 10
+    it       = 1
 
-    # iteration 2
-    topo2    = np.real(np.fft.ifft2(constant - _series_sum(topoinverse, 2)))
-    rms2     = _rms(topo2, topoinverse, numrows, numcolumns)
-    rms      = rms2
-    finaltopoinverse = topo2
-    iter_reached     = 2
-    print(f'  Underplating iter 2, rms = {rms2:.6f} km')
+    import warnings
+    for n in range(2, max_iter + 1):
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            curr = _next_topo(finaltopoinverse, n, ftot_wn, constant, filt)
+        rms_val = _rms(curr, finaltopoinverse, numrows, numcolumns)
 
-    if rms2 >= criterio:
-        topo3 = np.real(np.fft.ifft2(constant - _series_sum(topo2, 3)))
-        rms3  = _rms(topo3, topo2, numrows, numcolumns)
-        rms   = rms3
-        finaltopoinverse = topo3
-        iter_reached     = 3
-        print(f'  Underplating iter 3, rms = {rms3:.6f} km')
+        # Stop if nan/inf or diverging (rms increased significantly)
+        if not np.isfinite(rms_val) or np.isnan(curr).any() or (rms_val > prev_rms * 2 and prev_rms < np.inf):
+            print(f'  Underplating iter {n}: diverging, stopping early.')
+            break
 
-        if rms3 >= criterio:
-            topo4 = np.real(np.fft.ifft2(constant - _series_sum(topo3, 4)))
-            rms4  = _rms(topo4, topo3, numrows, numcolumns)
-            rms   = rms4
-            finaltopoinverse = topo4
-            iter_reached     = 4
-            print(f'  Underplating iter 4, rms = {rms4:.6f} km')
+        print(f'  Underplating iter {n}, rms = {rms_val:.6f} km')
+        finaltopoinverse = curr
+        prev_rms = rms_val
+        it = n
 
-            if rms4 >= criterio:
-                topo5 = np.real(np.fft.ifft2(constant - _series_sum(topo4, 5)))
-                rms5  = _rms(topo5, topo4, numrows, numcolumns)
-                rms   = rms5
-                finaltopoinverse = topo5
-                iter_reached     = 5
-                print(f'  Underplating iter 5, rms = {rms5:.6f} km')
+        if rms_val < best_rms:
+            best_rms  = rms_val
+            best_topo = curr.copy()
 
-                if rms5 >= criterio:
-                    topo6 = np.real(np.fft.ifft2(constant - _series_sum(topo5, 6)))
-                    rms6  = _rms(topo6, topo5, numrows, numcolumns)
-                    rms   = rms6
-                    finaltopoinverse = topo6
-                    iter_reached     = 6
-                    print(f'  Underplating iter 6, rms = {rms6:.6f} km')
+        if rms_val < criterio:
+            break
 
-                    if rms6 >= criterio:
-                        topo7 = np.real(np.fft.ifft2(constant - _series_sum(topo6, 7)))
-                        rms7  = _rms(topo7, topo6, numrows, numcolumns)
-                        rms   = rms7
-                        finaltopoinverse = topo7
-                        iter_reached     = 7
-                        print(f'  Underplating iter 7, rms = {rms7:.6f} km')
-
-                        if rms7 >= criterio:
-                            topo8 = np.real(np.fft.ifft2(constant - _series_sum(topo7, 8)))
-                            rms8  = _rms(topo8, topo7, numrows, numcolumns)
-                            rms   = rms8
-                            finaltopoinverse = topo8
-                            iter_reached     = 8
-                            print(f'  Underplating iter 8, rms = {rms8:.6f} km')
-
-                            if rms8 >= criterio:
-                                topo9 = np.real(np.fft.ifft2(constant - _series_sum(topo8, 9)))
-                                rms9  = _rms(topo9, topo8, numrows, numcolumns)
-                                rms   = rms9
-                                finaltopoinverse = topo9
-                                iter_reached     = 9
-                                print(f'  Underplating iter 9, rms = {rms9:.6f} km')
-
-                                if rms9 >= criterio:
-                                    topo10 = np.real(np.fft.ifft2(constant - _series_sum(topo9, 10)))
-                                    rms10  = _rms(topo10, topo9, numrows, numcolumns)
-                                    rms    = rms10
-                                    finaltopoinverse = topo10
-                                    iter_reached     = 10
-                                    print(f'  Underplating iter 10, rms = {rms10:.6f} km')
-
-    print(f'Underplating stopped at iteration {iter_reached}, rms = {rms:.6f} km')
+    finaltopoinverse = best_topo
+    print(f'Underplating best result at iteration {it}, rms = {best_rms:.6f} km')
 
     # ------------------------------------------------------------------
     # Write output grid

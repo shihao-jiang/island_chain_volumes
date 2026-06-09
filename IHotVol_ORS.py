@@ -10,7 +10,7 @@ import subprocess
 import shutil
 import numpy as np
 import platform
-
+from gmt_utils import run
 
 def IHotVol_ORS(grdfile, X, Y, Z, minW, maxW, intW, level, mask):
     """
@@ -34,11 +34,6 @@ def IHotVol_ORS(grdfile, X, Y, Z, minW, maxW, intW, level, mask):
     region : str         – GMT -R string for the sub-region
     """
 
-    def run(cmd):
-        env = os.environ.copy()
-        env['GMT_VERBOSE'] = 'e'
-        subprocess.run(cmd + ' 2>/dev/null', shell=True, check=True, env=env)
-
     # Sub-region of map (slightly inset to avoid edge effects)
     region = (f'-R{np.ceil(X.min()) + 0.05:.4f}/{np.floor(X.max()) - 0.05:.4f}'
               f'/{np.ceil(Y.min()) + 0.05:.4f}/{np.floor(Y.max()) - 0.05:.4f}')
@@ -46,7 +41,7 @@ def IHotVol_ORS(grdfile, X, Y, Z, minW, maxW, intW, level, mask):
     # If masked, apply mask before ORS then restore
     if mask == 1:
         shutil.copy(grdfile, 'backupgrdfile_ORS.grd')
-        run(f'grdmath MASK.grd {grdfile} MUL 0 DENAN = {grdfile}')
+        run(f'gmt grdmath MASK.grd {grdfile} MUL 0 DENAN = {grdfile}')
         cmd = (f'bash ./RR-Sep_mask.sh {grdfile} {region} '
                f'{minW} {maxW} {intW} {level}')
         run(cmd)
@@ -79,7 +74,7 @@ def IHotVol_ORS(grdfile, X, Y, Z, minW, maxW, intW, level, mask):
 
     # Subtract ORS regional from observed to get residual
     shutil.copy('./finalRR/resid.grd', f'{grdfile}_residual.grd')
-    run(f'grdsample {grdfile} -R{grdfile}_residual.grd -Gtmpregion.grd')
-    run(f'grdmath tmpregion.grd {grdfile}_residual.grd SUB = {grdfile}_regional.grd')
+    run(f'gmt grdsample {grdfile} -R{grdfile}_residual.grd -Gtmpregion.grd')
+    run(f'gmt grdmath tmpregion.grd {grdfile}_residual.grd SUB = {grdfile}_regional.grd')
 
     return ORS_L, region

@@ -9,11 +9,10 @@ import os
 import subprocess
 import numpy as np
 import matplotlib
-matplotlib.use('Qt5Agg')   # change backend if needed (e.g. 'Qt5Agg')
 import matplotlib.pyplot as plt
 from matplotlib.path import Path
 from grd_utils import grdread2, grdwrite2
-
+from gmt_utils import run
 
 def IHotVol_PickEdifice(grdfile, AGES):
     """
@@ -31,11 +30,6 @@ def IHotVol_PickEdifice(grdfile, AGES):
     Ypoly : 1-D ndarray – polygon y vertices (user-picked)
     INP   : 2-D bool ndarray – True inside the edifice polygon
     """
-
-    def run(cmd):
-        env = os.environ.copy()
-        env['GMT_VERBOSE'] = 'e'
-        subprocess.run(cmd + ' 2>/dev/null', shell=True, check=True, env=env)
 
     # Load residual grid
     Xres, Yres, Zres = grdread2(f'{grdfile}_residual.grd')
@@ -87,10 +81,10 @@ def IHotVol_PickEdifice(grdfile, AGES):
     grdwrite2(Xres, Yres, INP.astype(float), 'INP.grd')
 
     # Reformat grid with GMT (grdwrite2 output not compatible with grdflexure)
-    run(f'grd2xyz ED.grd | xyz2grd -G{grdfile}_edifice.grd -R{grdfile}')
+    run(f'gmt grd2xyz ED.grd | gmt xyz2grd -G{grdfile}_edifice.grd -R{grdfile}')
 
     # De-NaN the edifice grid (set 0 outside)
-    run(f'grdmath {grdfile}_edifice.grd 0 DENAN = {grdfile}_edifice.grd')
+    run(f'gmt grdmath {grdfile}_edifice.grd 0 DENAN = {grdfile}_edifice.grd')
 
     # Read back in and re-write INP at same resolution
     Xg, Yg, Zg = grdread2(f'{grdfile}_edifice.grd')

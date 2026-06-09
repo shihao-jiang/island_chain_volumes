@@ -6,7 +6,7 @@ Equivalent to the MATLAB function IHotVol_Airy.
 """
 
 import subprocess
-
+from gmt_utils import run
 
 def IHotVol_Airy(grdfile, rho_c, rho_w, rho_m):
     """
@@ -22,8 +22,8 @@ def IHotVol_Airy(grdfile, rho_c, rho_w, rho_m):
     """
 
     cmd = (
-        f'grdmath {rho_c} {rho_w} SUB {rho_m} {rho_c} SUB DIV '
+        f'gmt grdmath {rho_c} {rho_w} SUB {rho_m} {rho_c} SUB DIV '
         f'{grdfile}_edifice.grd MUL NEG = '
         f'{grdfile}_airy_compensation.grd'
     )
-    subprocess.run(cmd, shell=True, check=True)
+    run(cmd)

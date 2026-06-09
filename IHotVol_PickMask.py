@@ -10,11 +10,10 @@ import os
 import subprocess
 import numpy as np
 import matplotlib
-matplotlib.use('Qt5Agg')   # change backend if needed
 import matplotlib.pyplot as plt
 from matplotlib.path import Path
 from grd_utils import grdread2, grdwrite2
-
+from gmt_utils import run
 
 def IHotVol_PickMask(grdfile):
     """
@@ -31,11 +30,6 @@ def IHotVol_PickMask(grdfile):
     YpolyM  : 1-D ndarray – polygon y vertices
     INPmask : 2-D bool ndarray – True inside the mask polygon
     """
-
-    def run(cmd):
-        env = os.environ.copy()
-        env['GMT_VERBOSE'] = 'e'
-        subprocess.run(cmd + ' 2>/dev/null', shell=True, check=True, env=env)
 
     # Load the bathymetry grid
     X, Y, Z = grdread2(grdfile)
@@ -77,7 +71,6 @@ def IHotVol_PickMask(grdfile):
     print('Mask written to MASK.grd')
 
     return XpolyM, YpolyM, INPmask
-
 
 def IHotVol_PickMask2(refgrdfile):
     """

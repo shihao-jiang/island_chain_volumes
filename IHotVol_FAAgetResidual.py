@@ -10,7 +10,7 @@ import subprocess
 import shutil
 import numpy as np
 from grd_utils import grdread2
-
+from gmt_utils import run
 
 def IHotVol_FAAgetResidual(ORS_L, WGMFAAgrd, mask, subaq):
     """
@@ -30,32 +30,27 @@ def IHotVol_FAAgetResidual(ORS_L, WGMFAAgrd, mask, subaq):
     ZResG : 2-D ndarray – residual gravity values
     """
 
-    def run(cmd):
-        env = os.environ.copy()
-        env['GMT_VERBOSE'] = 'e'
-        subprocess.run(cmd + ' 2>/dev/null', shell=True, check=True, env=env)
-
     # Sample WGM data to match synthetic grid extent
-    run(f'grdsample {WGMFAAgrd} -RSYNTH.grav.grd -Ggravmodel/faa.cut.grd')
+    run(f'gmt grdsample {WGMFAAgrd} -RSYNTH.grav.grd -Ggravmodel/faa.cut.grd')
 
     # Subtract forward model to get residual
-    run('grdmath gravmodel/faa.cut.grd SYNTH.grav.grd SUB = gravmodel/UPLATE.grav.grd')
+    run('gmt grdmath gravmodel/faa.cut.grd SYNTH.grav.grd SUB = gravmodel/UPLATE.grav.grd')
 
     # Remove mean from observed FAA
-    run('grdmath gravmodel/faa.cut.grd gravmodel/faa.cut.grd MEAN SUB = gravmodel/faa.cut.grd')
+    run('gmt grdmath gravmodel/faa.cut.grd gravmodel/faa.cut.grd MEAN SUB = gravmodel/faa.cut.grd')
 
     # Remove mean from forward model
-    run('grdmath SYNTH.grav.grd SYNTH.grav.grd MEAN SUB = SYNTH.grav.grd')
+    run('gmt grdmath SYNTH.grav.grd SYNTH.grav.grd MEAN SUB = SYNTH.grav.grd')
 
     # Low-pass filter underplating grid at 20 km
-    run('grdfilter gravmodel/UPLATE.grav.grd -Fc20k -D1 -Ggravmodel/UPLATE.grav.grd')
+    run('gmt grdfilter gravmodel/UPLATE.grav.grd -Fc20k -D1 -Ggravmodel/UPLATE.grav.grd')
     shutil.copy('gravmodel/UPLATE.grav.grd', 'gravmodel/UPLATE.lowpass.grav.grd')
 
     # If masked, also mask the result
     if mask == 1:
-        run('grdsample MASK.grd -Rgravmodel/UPLATE.grav.grd -GMASK.grav.grd')
+        run('gmt grdsample MASK.grd -Rgravmodel/UPLATE.grav.grd -GMASK.grav.grd')
         shutil.copy('gravmodel/UPLATE.grav.grd', 'gravmodel/backup.UPLATE.grav.grd')
-        run('grdmath MASK.grav.grd gravmodel/UPLATE.grav.grd MUL = gravmodel/UPLATE.grav.grd')
+        run('gmt grdmath MASK.grav.grd gravmodel/UPLATE.grav.grd MUL = gravmodel/UPLATE.grav.grd')
 
     # Read in results
     XResG, YResG, ZResG = grdread2('gravmodel/UPLATE.grav.grd')

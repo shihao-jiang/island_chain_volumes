@@ -11,7 +11,7 @@ import shutil
 import numpy as np
 from scipy.special import erfinv
 from grd_utils import grdread2
-
+from gmt_utils import run
 
 def IHotVol_Flexure(loadfile, rho_c, rho_w, rho_m, rho_i,
                     T_elas, T_mant, kappa, HSPT_TRK, grdfile, ii):
@@ -40,11 +40,6 @@ def IHotVol_Flexure(loadfile, rho_c, rho_w, rho_m, rho_i,
     Zflx : 2-D ndarray – flexure grid values
     """
 
-    def run(cmd):
-        env = os.environ.copy()
-        env['GMT_VERBOSE'] = 'e'
-        subprocess.run(cmd + ' 2>/dev/null', shell=True, check=True, env=env)
-
     # Seconds per year
     sec_per_yr = 365.25 * 24 * 3600
 
@@ -71,7 +66,7 @@ def IHotVol_Flexure(loadfile, rho_c, rho_w, rho_m, rho_i,
         HSPT_TRK[jj, 5] = Te   # store Te in track array
 
         # GMT grdflexure for this Te
-        run((f'grdflexure {loadfile} '
+        run((f'gmt grdflexure {loadfile} '
              f'-D{rho_m}/{rho_c}/{rho_i}/{rho_w} '
              f'-E{Te}k -fg -N+a '
              f'-GFLX_comp_Te_{round(10 * Te) / 10:.1f}km.grd'))
@@ -90,7 +85,7 @@ def IHotVol_Flexure(loadfile, rho_c, rho_w, rho_m, rho_i,
         fid.write('\n'.join(blend_lines) + '\n')
 
     # Generate blended flexure grid
-    run(f'grdblend Blendfile.txt -Gflexure.{ii}.grd -R{grdfile}')
+    run(f'gmt grdblend Blendfile.txt -Gflexure.{ii}.grd -R{grdfile}')
 
     # Stash pre-blend grids (overwrite if already exists)
     for fname in os.listdir('.'):
@@ -101,7 +96,7 @@ def IHotVol_Flexure(loadfile, rho_c, rho_w, rho_m, rho_i,
             shutil.move(fname, 'FLXcomptmp/')
 
     # DENAN flexure grid (replace NaN with 0)
-    run(f'grdmath flexure.{ii}.grd 0 DENAN = flexure.DENAN.{ii}.grd')
+    run(f'gmt grdmath flexure.{ii}.grd 0 DENAN = flexure.DENAN.{ii}.grd')
 
     # Read in flexure grid
     Xflx, Yflx, Zflx = grdread2(f'flexure.DENAN.{ii}.grd')

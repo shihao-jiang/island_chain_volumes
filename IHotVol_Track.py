@@ -10,11 +10,10 @@ import os
 import subprocess
 import numpy as np
 import matplotlib
-matplotlib.use('Qt5Agg')
 import matplotlib.pyplot as plt
 from scipy.optimize import minimize_scalar
 from grd_utils import grdread2
-
+from gmt_utils import run
 
 # ---------------------------------------------------------------------------
 # Helper: closest point on polynomial curve (replaces MATLAB closepoint)
@@ -38,7 +37,6 @@ def _closepoint(x0, y0, p):
     yc  = np.polyval(p, xc)
     return xc, yc
 
-
 # ---------------------------------------------------------------------------
 # Helper: approximate haversine / great-circle distance (deg → km)
 # ---------------------------------------------------------------------------
@@ -51,7 +49,6 @@ def _deg2km(lat1, lon1, lat2, lon2):
     dlon = lon2 - lon1
     a    = np.sin(dlat / 2) ** 2 + np.cos(lat1) * np.cos(lat2) * np.sin(dlon / 2) ** 2
     return R * 2 * np.arcsin(np.sqrt(np.clip(a, 0, 1)))
-
 
 # ---------------------------------------------------------------------------
 # Main function
@@ -79,11 +76,6 @@ def IHotVol_Track(AGES, X, Y, Z, grdfile, SFLagegrd):
     pA       : 1-D array – polynomial coefficients (age vs. along-track distance)
     TMPTRK   : ndarray  – temporary track array used internally
     """
-
-    def run(cmd):
-        env = os.environ.copy()
-        env['GMT_VERBOSE'] = 'e'
-        subprocess.run(cmd + ' 2>/dev/null', shell=True, check=True, env=env)
 
     # Sort age data by longitude
     AGES = AGES[np.argsort(AGES[:, 0])]
@@ -143,7 +135,7 @@ def IHotVol_Track(AGES, X, Y, Z, grdfile, SFLagegrd):
     np.savetxt('track.txt', TMPTRK)
 
     # Generate track cross-sections with GMT
-    run(f"cat track.txt | awk '{{print $1,$2}}' | grdtrack -G{grdfile} -C2k/1/20 -Ar > track_cross.txt")
+    run(f"cat track.txt | awk '{{print $1,$2}}' | gmt grdtrack -G{grdfile} -C2k/1/20 -Ar > track_cross.txt")
     run("awk '$3==0 {print $1,$2}' track_cross.txt > track20k.txt")
 
     TRK = np.loadtxt('track20k.txt')
@@ -206,14 +198,14 @@ def IHotVol_Track(AGES, X, Y, Z, grdfile, SFLagegrd):
     os.makedirs('cutagetmp', exist_ok=True)
 
     # Read and clip seafloor age grid
-    run(f'grdsample {SFLagegrd} -Gcutagetmp/age.{grdfile} -R{grdfile}')
+    run(f'gmt grdsample {SFLagegrd} -Gcutagetmp/age.{grdfile} -R{grdfile}')
 
     # Weighted-average seafloor age at each track point
     litho_age = np.zeros(len(HSPT_TRK))
 
     for ii in range(len(HSPT_TRK)):
         cut_file = f'cutagetmp/cut.age.{ii + 1}.grd'
-        run((f"grdcut cutagetmp/age.{grdfile} "
+        run((f"gmt grdcut cutagetmp/age.{grdfile} "
              f"-Sn{HSPT_TRK[ii, 0]}/{HSPT_TRK[ii, 1]}/5d "
              f"-G{cut_file}"))
 

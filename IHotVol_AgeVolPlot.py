@@ -38,20 +38,28 @@ def IHotVol_AgeVolPlot(VOL, Crosses, p):
         ('Underplating', VOL[:, 4] * 4,                            'g'),
     ]
 
-    fig, axes = plt.subplots(4, 1, figsize=(10, 16))
+    fig, axes = plt.subplots(2, 2, figsize=(14, 10), facecolor='white')
+    axes = axes.flatten()
 
     for ax, (name, data, colour) in zip(axes, panels):
+        ax.set_facecolor('white')
         ax.plot(age, data, color=colour, linewidth=2)
-        ax.set_ylabel(r'Volume, km$^3$', fontsize=14)
-        ax.set_title(name, fontsize=15)
-        ax.tick_params(labelsize=12)
-        ax.grid(True, linestyle='--', alpha=0.5)
-
-    axes[-1].set_xlabel('Age (Ma)', fontsize=14)
+        ax.set_ylabel(r'Volume (km$^3$)', fontsize=13, color='black')
+        ax.set_xlabel('Age (Ma)', fontsize=13, color='black')
+        ax.set_title(name, fontsize=14, fontweight='bold', color='black')
+        ax.tick_params(labelsize=11, colors='black', which='both')
+        ax.xaxis.label.set_color('black')
+        ax.yaxis.label.set_color('black')
+        ax.grid(True, linestyle='--', alpha=0.4, color='grey')
+        for spine in ax.spines.values():
+            spine.set_edgecolor('black')
+        # force tick labels black (overrides dark theme)
+        for label in ax.get_xticklabels() + ax.get_yticklabels():
+            label.set_color('black')
 
     plt.tight_layout()
     fname = 'results/volume_components.png'
-    fig.savefig(fname, dpi=150)
+    fig.savefig(fname, dpi=150, facecolor='white')
     print(f'Saved {fname}')
     try:
         plt.close(fig)

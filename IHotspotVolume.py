@@ -29,7 +29,6 @@ import shutil
 import subprocess
 import numpy as np
 import matplotlib
-matplotlib.use('Qt5Agg')  # change backend if needed
 import matplotlib.pyplot as plt
 
 from grd_utils import grdread2
@@ -46,14 +45,6 @@ from IHotVol_SampleVolGrids import IHotVol_SampleVolGrids
 from IHotVol_VolumeSlices import IHotVol_VolumeSlices
 from IHotVol_AgeVolPlot import IHotVol_AgeVolPlot
 from IHotVol_Spectral import IHotVol_Spectral
-
-
-def run(cmd):
-    """Run a shell (GMT) command, suppressing GMT warnings."""
-    env = os.environ.copy()
-    env['GMT_VERBOSE'] = 'e'
-    subprocess.run(cmd + ' 2>/dev/null', shell=True, check=True, env=env)
-
 
 # =============================================================================
 # -- Inputs and paths
@@ -124,7 +115,7 @@ else:
     print(f'{grdfile} already exists, skipping download.')
 
 # resample high-res to 2 arc-minutes
-run(f'grdsample {grdfile} -R{grdfile} -I2m+e -G{grdfile}')
+run(f'gmt grdsample {grdfile} -R{grdfile} -I2m+e -G{grdfile}')
 
 # read in final grid
 X, Y, Z = grdread2(grdfile)
@@ -199,20 +190,20 @@ denangrdfile    = f'gravmodel/{grdfile}.DENAN.grd'
 edificegrdfile  = f'{grdfile}_edifice.grd'
 
 # make zero grid for subbing NaNs
-run(f'grdmath {grdfile} 0 MUL = zerogrdfile.grd')
-run(f'grdsample {grdfile} -R{edificegrdfile} -G{denangrdfile}')
+run(f'gmt grdmath {grdfile} 0 MUL = zerogrdfile.grd')
+run(f'gmt grdsample {grdfile} -R{edificegrdfile} -G{denangrdfile}')
 
 # DENAN bathy
-run(f'grdmath {denangrdfile} 0 DENAN = {denangrdfile}')
+run(f'gmt grdmath {denangrdfile} 0 DENAN = {denangrdfile}')
 
 # subaerial part of grid
-run(f'grdmath {grdfile} 0 GT {grdfile} MUL = gravmodel/subair.grd')
-run(f'grdmath gravmodel/subair.grd 0 DENAN = {subaerialgrdfile}')
+run(f'gmt grdmath {grdfile} 0 GT {grdfile} MUL = gravmodel/subair.grd')
+run(f'gmt grdmath gravmodel/subair.grd 0 DENAN = {subaerialgrdfile}')
 
 # trim and DENAN sediment grid for gravity
-run(f'grdsample {SEDthckgrd} -R{grdfile} -Ggravmodel/sedcut.{grdfile}')
-run(f'grdmath gravmodel/sedcut.{grdfile} 0 DENAN 1 {grdfile} ADD  = {sedcutgrdfile}')
-run(f'grdmath {sedcutgrdfile} 0 DENAN = {sedcutgrdfile}')
+run(f'gmt grdsample {SEDthckgrd} -R{grdfile} -Ggravmodel/sedcut.{grdfile}')
+run(f'gmt grdmath gravmodel/sedcut.{grdfile} 0 DENAN 1 {grdfile} ADD  = {sedcutgrdfile}')
+run(f'gmt grdmath {sedcutgrdfile} 0 DENAN = {sedcutgrdfile}')
 
 # generate forward gravity model
 XgMod, YgMod, ZgMod = IHotVol_GravForward(
@@ -230,6 +221,7 @@ XResG, YResG, ZResG = IHotVol_FAAgetResidual(ORS_L, WGMFAAgrd, mask, subaq)
 INPold = INP.copy()
 XResGmesh, YResGmesh = np.meshgrid(XResG, YResG)
 from matplotlib.path import Path
+from gmt_utils import run
 poly_path = Path(np.column_stack([Xpoly, Ypoly]))
 pts = np.column_stack([XResGmesh.ravel(), YResGmesh.ravel()])
 INP = poly_path.contains_points(pts).reshape(XResGmesh.shape)
@@ -257,8 +249,8 @@ while residDiff[ii - 1] > 0.0001 and ii < max_iterations:
     print(f'Iteration {ii} / {max_iterations}')
 
     # resample/fit
-    run(f'grdsample Uplate.{ii-1}.grd -R{grdfile}_edifice.grd -GUplate.{ii-1}.grd')
-    run(f'grdmath Uplate.{ii-1}.grd  Uplate.{ii-1}.grd LOWER SUB = Uplate.{ii-1}.grd')
+    run(f'gmt grdsample Uplate.{ii-1}.grd -R{grdfile}_edifice.grd -GUplate.{ii-1}.grd')
+    run(f'gmt grdmath Uplate.{ii-1}.grd  Uplate.{ii-1}.grd LOWER SUB = Uplate.{ii-1}.grd')
 
     # load reduction correction
     run((f'grdmath {grdfile}_edifice.grd {rho_c - rho_w} MUL '
@@ -272,7 +264,7 @@ while residDiff[ii - 1] > 0.0001 and ii < max_iterations:
     mohoflexgrdfile = f'flexure.DENAN.{ii}.grd'
 
     if ii == 2:
-        run(f'grdsample {grdfile} -R{grdfile}_edifice.{ii}.grd -G{grdfile}sampleiter.grd')
+        run(f'gmt grdsample {grdfile} -R{grdfile}_edifice.{ii}.grd -G{grdfile}sampleiter.grd')
         run((f'grdmath {grdfile}_edifice.{ii}.grd {grdfile}_edifice.{ii}.grd MEAN '
              f'{grdfile}sampleiter.grd MEAN SUB SUB 0 DENAN = {grdfile}_edifice.{ii}.grd'))
     else:
@@ -307,7 +299,7 @@ else:
     print(f'Converged after {ii} iterations.')
 
 # final flexure calculation using only the compensated edifice
-run(f'grdsample {grdfile}_edifice.grd -R{grdfile}_edifice.{ii}.grd -G{grdfile}_edifice.flexsample.grd')
+run(f'gmt grdsample {grdfile}_edifice.grd -R{grdfile}_edifice.{ii}.grd -G{grdfile}_edifice.flexsample.grd')
 run((f'grdmath {grdfile}_edifice.flexsample.grd 0 GT '
      f'{grdfile}_edifice.{ii}.grd MUL 0 DENAN = {grdfile}_edifice.FINAL.grd'))
 Xflx, Yflx, Zflx = IHotVol_Flexure(
